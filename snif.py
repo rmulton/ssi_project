@@ -9,18 +9,24 @@ import radio
 ### Inputs ###
 ##############
 
+# Change these ones
 CHAN_MIN = 0 # Min 0
 CHAN_MAX = 100 # Max 100
-DEST_ADDR_FILTER = '04' # ex: 88:c6 or 88
-EMIT_ADDR_FILTER = '' # the addr recognized is rarely the good one
+DEST_ADDR_FILTER = '' # ex: 88:c6 or 88
+
+# Probably not to change
 DATARATES = [
     radio.RATE_250KBIT,
     radio.RATE_1MBIT,
     radio.RATE_2MBIT
     ]
 RADIO_MODE = 'ble'
+
+# Experimental
 RESEND_MODE = False
 DISPLAY_RAW = False
+EMIT_ADDR_FILTER = '' # the addr recognized is rarely the good one
+DISPLAY_SENDER = False
 
 ###############
 ### Helpers ###
@@ -90,7 +96,7 @@ def _packet_to_string_rb_format(pkt):
         sender_addr = '%02x:%02x:%02x:%02x:%02x:%02x' % (
         pkt[34], pkt[35], pkt[36], pkt[37], pkt[38], pkt[39]
         )
-    else:
+    elif DISPLAY_SENDER:
         sender_addr = 'unrecognized'
     advinfo = ' '.join(['%02x '%c for c in pkt[14:]])
     rest = ' '.join(['%02x '%c for c in pkt[:8]])
