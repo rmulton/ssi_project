@@ -12,7 +12,7 @@ import radio
 # Change these ones
 CHAN_MIN = 0 # Min 0
 CHAN_MAX = 100 # Max 100
-DEST_ADDR_FILTER = '' # ex: 88:c6 or 88
+DEST_ADDR_FILTER = '04:52:c7:c7:b9:7d' # ex: 88:c6 or 88
 
 # Probably not to change
 DATARATES = [
@@ -27,6 +27,7 @@ RESEND_MODE = False
 DISPLAY_RAW = False
 EMIT_ADDR_FILTER = '' # the addr recognized is rarely the good one
 DISPLAY_SENDER = False
+REPEAT_FIRST_PACKET = True
 
 ###############
 ### Helpers ###
@@ -92,15 +93,18 @@ def _packet_to_string_rb_format(pkt):
     dest_addr = '%02x:%02x:%02x:%02x:%02x:%02x' % (
     pkt[13], pkt[12], pkt[11], pkt[10], pkt[9], pkt[8]
     )
-    if len(pkt)>39:
-        sender_addr = '%02x:%02x:%02x:%02x:%02x:%02x' % (
-        pkt[34], pkt[35], pkt[36], pkt[37], pkt[38], pkt[39]
-        )
-    elif DISPLAY_SENDER:
-        sender_addr = 'unrecognized'
     advinfo = ' '.join(['%02x '%c for c in pkt[14:]])
     rest = ' '.join(['%02x '%c for c in pkt[:8]])
-    return dest_addr, sender_addr, 'Address : {} || Sender : {} || Adv_info : {}  || Rest : {}'.format(dest_addr, sender_addr, advinfo, rest)
+    if DISPLAY_SENDER:
+        if len(pkt)>39:
+            sender_addr = '%02x:%02x:%02x:%02x:%02x:%02x' % (
+            pkt[34], pkt[35], pkt[36], pkt[37], pkt[38], pkt[39]
+            )
+        else:
+            sender_addr = 'unrecognized'
+        return dest_addr, sender_addr, 'Address : {} || Sender : {} || Adv_info : {}  || Rest : {}'.format(dest_addr, sender_addr, advinfo, rest)
+    else:
+        return dest_addr, '', 'Address : {} || Adv_info : {}  || Rest : {}'.format(dest_addr, advinfo, rest)
 
 # Main function
 def read_pkt(pkt, dest_addr_filter, emit_addr_filter):
@@ -115,6 +119,10 @@ def read_pkt(pkt, dest_addr_filter, emit_addr_filter):
             dest_addr, emit_addr, pkt_str = _packet_to_string_rb_format(pkt)
             # Filter packets regarding the destination address and emiter address filters
             if dest_addr[:dest_filter_size]==dest_addr_filter and emit_addr[:emit_filter_size]==emit_addr_filter:
+                if REPEAT_FIRST_PACKET:
+                    while True:
+                        print('Sending pkt {}'.format(pkt_str))
+                        radio.send_bytes(pkt)
                 return pkt_str
             else:
                 return None
