@@ -12,7 +12,7 @@ import radio
 # Change these ones
 CHAN_MIN = 0 # Min 0
 CHAN_MAX = 100 # Max 100
-DEST_ADDR_FILTER = '04:52:c7:c7:b9:7d' # ex: 88:c6 or 88
+DEST_ADDR_FILTER = '' # ex: 88:c6 or 88
 
 # Probably not to change
 DATARATES = [
@@ -27,13 +27,20 @@ RESEND_MODE = False
 DISPLAY_RAW = False
 EMIT_ADDR_FILTER = '' # the addr recognized is rarely the good one
 DISPLAY_SENDER = False
-REPEAT_FIRST_PACKET = True
+REPEAT_FIRST_PACKET_FILTERED = False
+REPEAT_FIRST_PACKET_FOUND = False
+DISPLAY_UNPARSED = True
 
 ###############
 ### Helpers ###
 ###############
 
 # Update radio configuration parameters
+def read_pkt_mem_err(pkt):
+    pkt_str = [str(el) for el in pkt]
+    return pkt_str
+
+
 def _increment_cfg_param(chan, rate_nb, chan_min, chan_max, datarates):
     '''
     Increment radio config parameters : bluetooth channel, datarate.
@@ -90,11 +97,14 @@ def _packet_to_string_rb_format(pkt):
     '''
     Get a printable string from packet for the packet format described by the radiobit team.
     '''
+    # Parse the packet
     dest_addr = '%02x:%02x:%02x:%02x:%02x:%02x' % (
     pkt[13], pkt[12], pkt[11], pkt[10], pkt[9], pkt[8]
     )
     advinfo = ' '.join(['%02x '%c for c in pkt[14:]])
     rest = ' '.join(['%02x '%c for c in pkt[:8]])
+    pkt_str = 'Address : {} || Adv_info : {}  || Rest : {}'.format(dest_addr, advinfo, rest)
+    # Experimental : parse the sender (worked on UEBoom2)
     if DISPLAY_SENDER:
         if len(pkt)>39:
             sender_addr = '%02x:%02x:%02x:%02x:%02x:%02x' % (
@@ -102,9 +112,9 @@ def _packet_to_string_rb_format(pkt):
             )
         else:
             sender_addr = 'unrecognized'
-        return dest_addr, sender_addr, 'Address : {} || Sender : {} || Adv_info : {}  || Rest : {}'.format(dest_addr, sender_addr, advinfo, rest)
+        return dest_addr, sender_addr, '{} || Sender : {}'.format(pkt_str, sender_addr)
     else:
-        return dest_addr, '', 'Address : {} || Adv_info : {}  || Rest : {}'.format(dest_addr, advinfo, rest)
+        return dest_addr, '', pkt_str # sender_addr is compared later with the one input on top of this file
 
 # Main function
 def read_pkt(pkt, dest_addr_filter, emit_addr_filter):
@@ -119,7 +129,8 @@ def read_pkt(pkt, dest_addr_filter, emit_addr_filter):
             dest_addr, emit_addr, pkt_str = _packet_to_string_rb_format(pkt)
             # Filter packets regarding the destination address and emiter address filters
             if dest_addr[:dest_filter_size]==dest_addr_filter and emit_addr[:emit_filter_size]==emit_addr_filter:
-                if REPEAT_FIRST_PACKET:
+                # Experimental : infinite loop to send the first packet corresponding to the filters
+                if REPEAT_FIRST_PACKET_FILTERED:
                     while True:
                         print('Sending pkt {}'.format(pkt_str))
                         radio.send_bytes(pkt)
@@ -132,7 +143,8 @@ def read_pkt(pkt, dest_addr_filter, emit_addr_filter):
             return pkt_str
     # Some packets look too long to display
     except MemoryError as e:
-        return 'Error : packet is too long, couldnt display'
+        # return 'Error : packet is too long, couldnt display : len {}'.format(len(pkt))
+        return read_pkt_mem_err(pkt)
 
 #################
 ### Main code ###
@@ -152,10 +164,17 @@ while True:
 
     # Display packets
     if pkt is not None:
-        if RESEND_MODE:
-            print('>> Resent')
+        while REPEAT_FIRST_PACKET_FOUND:
+            print('Sending packet {}'.format(pkt))
             radio.send_bytes(pkt)
-        pkt_str = read_pkt(pkt, DEST_ADDR_FILTER, EMIT_ADDR_FILTER)
+        if not DISPLAY_UNPARSED:
+            pkt_str = read_pkt(pkt, DEST_ADDR_FILTER, EMIT_ADDR_FILTER)
+        else:
+            try:
+                pkt_str = ' '.join(['%02x '%c for c in pkt])
+            except MemoryError as e:
+                pkt_str = read_pkt_mem_err(pkt)
+                
         if pkt_str:
             try:
                 if DISPLAY_RAW:
@@ -163,5 +182,5 @@ while True:
                 else:
                     print('{} || {}'.format(cfg_str, pkt_str))
             except MemoryError as e:
-                print('Error : packet is too long, couldnt display')
+                print('Error : packet is too long, couldnt display: len {}'.format(len(pkt)))
            
