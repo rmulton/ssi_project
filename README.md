@@ -31,3 +31,9 @@ Now you can flash the micro:bit with our program and the radiobit firmware.
 ```uflash -r <replace with the path to radiobit repo>/radiobit/precompiled/radiobit.hex  <replace with the path to this repo>/ssi_project/<program_you_want_to_use>.py```
 
 Example : ```uflash -r .\radiobit\precompiled\radiobit.hex .\ssi_project\snif.py```
+
+### 6. Our contribution
+- Sniffer for logs: ```snif_raw_version.py```
+This one is used to sniff all received packets and print them in a log. The corresponding notebook for analysis is in ```./logs/Analysis.ipynb```
+
+- Sniffer for live observation: ```snif.py```
