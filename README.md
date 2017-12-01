@@ -11,12 +11,12 @@ We are using radiobit's from project code. See their work here : https://github.
 ### 4. Install a serial communication program
 To be able to see what the micro:bit prints, you need to use the serial communication interface.
 See here : https://www.microbit.co.uk/td/serial-library
-#### MacOS
+#### MacOS and GNU/Linux
 For macos and linux users, you are going to use ```screen```
 1. Install screen.
 2. Attach a screen to the micro:bit serial communication system.
 
-```ls /dev/cu.usb*``` will give you the serial communication system name
+```ls /dev/cu.usb*``` will give you the serial communication system name (not tested on GNU/Linux).
 
 ```screen /dev/cu.usb<replace with micro:bit name> 115200``` will attach a screen to the micro:bit serial communication system.
 
