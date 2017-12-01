@@ -37,3 +37,5 @@ Example : ```uflash -r .\radiobit\precompiled\radiobit.hex .\ssi_project\snif.py
 This one is used to sniff all received packets and print them in a log. The corresponding notebook for analysis is in ```./logs/Analysis.ipynb```
 
 - Sniffer for live observation: ```snif.py```
+
+- You can find logs in ```./logs/```
